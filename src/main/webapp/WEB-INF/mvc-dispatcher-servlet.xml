@@ -1,0 +1,142 @@
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:task="http://www.springframework.org/schema/task"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc.xsd
+        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+    <context:component-scan base-package="com.wpt.*"/>
+
+
+    <mvc:annotation-driven>
+        <mvc:message-converters register-defaults="true">
+            <!-- 配置Fastjson支持 -->
+            <bean class="com.alibaba.fastjson.support.spring.FastJsonHttpMessageConverter">
+                <property name="supportedMediaTypes">
+                    <list>
+                        <value>text/html;charset=UTF-8</value>
+                        <value>application/json</value>
+                    </list>
+                </property>
+                <property name="features">
+                    <list>
+                        <value>WriteMapNullValue</value>
+                        <value>QuoteFieldNames</value>
+                    </list>
+                </property>
+            </bean>
+        </mvc:message-converters>
+    </mvc:annotation-driven>
+    <bean class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+        <property name="prefix" value="/WEB-INF/pages/"/>
+        <property name="suffix" value=".jsp"/>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSourcePlayWPT"/>
+        <property name="mapperLocations" value="classpath:/mybatis/*Mapper.xml"/>
+    </bean>
+
+
+    <bean id="sqlSessionTemplate" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="sqlSessionFactory"/>
+        <!--<constructor-arg index="1" value="BATCH"/>-->
+    </bean>
+
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <property name="basePackage" value="com.wpt.dao"/>
+    </bean>
+
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSourcePlayWPT"></property>
+    </bean>
+
+    <bean id="dataSourceWPTPayment" class="org.apache.tomcat.jdbc.pool.DataSource" >
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <!--<property name="url" value="jdbc:mysql://172.28.9.172:3306/wpt_payment?useUnicode=true&amp;characterEncoding=utf-8"/>-->
+        <property name="url" value="jdbc:mysql://172.28.9.172:3306/wpt_payment?useUnicode=true&amp;characterEncoding=utf-8"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+        <property name="maxActive" value="100"/>
+        <property name="maxIdle" value="10"/>
+        <property name="minIdle" value="0"/>
+        <property name="defaultAutoCommit" value="false"/>
+    </bean>
+
+    <bean id="dataSourcePlayWPT" class="org.apache.tomcat.jdbc.pool.DataSource" >
+        <property name="driverClassName" value="com.mysql.jdbc.Driver"/>
+        <property name="url" value="jdbc:mysql://172.28.9.172:3306/playwpt?useUnicode=true&amp;characterEncoding=utf-8"/>
+        <property name="username" value="root"/>
+        <property name="password" value="123456"/>
+        <property name="maxActive" value="100"/>
+        <property name="maxIdle" value="10"/>
+        <property name="minIdle" value="0"/>
+        <property name="defaultAutoCommit" value="false"/>
+    </bean>
+
+
+
+    <bean id="taskExecutor" class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+        <!-- 核心线程数 -->
+        <property name="corePoolSize" value="5" />
+        <!-- 最大线程数 -->
+        <property name="maxPoolSize" value="50" />
+        <!-- 队列最大长度 -->
+        <property name="queueCapacity" value="1000" />
+        <!-- 线程池维护线程所允许的空闲时间，默认为60s -->
+        <property name="keepAliveSeconds" value="60" />
+    </bean>
+    <!-- 注解式 -->
+    <task:annotation-driven />
+
+
+
+
+    <!-- Redis POOL配置 -->
+    <bean id="jedisPoolConfig" class="redis.clients.jedis.JedisPoolConfig">
+        <property name="maxTotal" value="${redis.jedisPoolConfig.maxActive}" />
+        <property name="maxIdle" value="${redis.jedisPoolConfig.maxIdle}" />
+        <property name="maxWaitMillis" value="${redis.jedisPoolConfig.maxWait}" />
+        <!--<property name="testOnBorrow" value="${redis.jedisPoolConfig.testOnBorrow}" />-->
+    </bean>
+
+    <!-- jedis shard信息配置 -->
+    <bean id="jedis.shardInfoCache1" class="redis.clients.jedis.JedisShardInfo">
+        <constructor-arg index="0" value="${redis.jedis.shardInfoCache1.host}" />
+        <constructor-arg index="1"  type="int" value="${redis.jedis.shardInfoCache1.port}" />
+    </bean>
+    <!--<bean id="jedis.shardInfoCache2" class="redis.clients.jedis.JedisShardInfo">-->
+        <!--<constructor-arg index="0" value="${redis.jedis.shardInfoCache2.host}" />-->
+        <!--<constructor-arg index="1"  type="int" value="${redis.jedis.shardInfoCache2.port}" />-->
+    <!--</bean>-->
+
+    <!-- jedis shard pool配置 -->
+    <bean id="shardedJedisPoolCache" class="redis.clients.jedis.ShardedJedisPool">
+        <constructor-arg index="0" ref="jedisPoolConfig" />
+        <constructor-arg index="1">
+            <list>
+                <ref bean="jedis.shardInfoCache1" />
+                <!--<ref bean="jedis.shardInfoCache2" />-->
+            </list>
+        </constructor-arg>
+    </bean>
+
+    <bean id="redisCache" class="com.wpt.common.RedisUtil">
+        <property name="shardedJedisPool" ref="shardedJedisPoolCache" />
+    </bean>
+
+    <!-- Redis POOL配置 -->
+
+
+    <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+        <property name="locations">
+            <list>
+                <value>classpath:config/configure.properties</value>
+            </list>
+        </property>
+    </bean>
+
+</beans>

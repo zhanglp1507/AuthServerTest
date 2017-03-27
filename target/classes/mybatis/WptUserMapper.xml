@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wpt.dao.WptUserMapper">
+
+    <resultMap type="com.wpt.entity.UserDto" id="userResultMap">
+        <id property="id" column="id"/>
+        <result property="email" column="email"/>
+        <result property="roleName" column="role_name"/>
+        <result property="displayName" column="display_name"/>
+        <result property="ogAccount" column="og_account"/>
+        <result property="emailValidatedAt" column="email_validated_at"/>
+        <result property="emailValidationStatus" column="email_validation_status"/>
+        <result property="passwordEncryptionType" column="password_encryption_type"/>
+        <result property="passwordSalt" column="password_salt"/>
+        <result property="encryptedPassword" column="encrypted_password"/>
+        <result property="accountStatus" column="account_status"/>
+        <result property="regIp" column="reg_ip"/>
+        <result property="regUa" column="reg_ua"/>
+        <result property="sourceId" column="source_id"/>
+        <result property="authToken" column="auth_token"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 查询用户，根据id -->
+    <select id="findById" parameterType="long" resultType="com.wpt.entity.UserDto" resultMap="userResultMap">
+            SELECT * from user u
+                WHERE u.id = #{id}
+    </select>
+
+    <!-- 查询用户，根据email -->
+    <select id="findByEmail" parameterType="String" resultType="com.wpt.entity.UserDto" resultMap="userResultMap">
+        SELECT * from user u
+        WHERE u.email = #{email}
+    </select>
+
+    <!-- 查询用户，根据email -->
+    <select id="findByDisplayName" parameterType="String" resultType="com.wpt.entity.UserDto" resultMap="userResultMap">
+        SELECT * from user u
+        WHERE u.display_name = #{displayName}
+    </select>
+
+    <!-- 查询用户，根据email -->
+    <select id="findByRoleName" parameterType="String" resultType="com.wpt.entity.UserDto" resultMap="userResultMap">
+        SELECT * from user u
+        WHERE u.role_name = #{roleName}
+    </select>
+
+    <update id="updateUserPassword" parameterType="com.wpt.entity.UserDto"
+            flushCache="true">
+        UPDATE user
+        set
+        password_encryption_type = #{passwordEncryptionType},
+        password_salt = #{passwordSalt},
+        encrypted_password = #{encryptedPassword}
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateUserRoleName" parameterType="com.wpt.entity.UserDto"
+            flushCache="true">
+        UPDATE user
+        set
+        role_name = #{roleName},
+        display_name = #{displayName},
+        og_account = #{ogAccount},
+        updated_at = NOW()
+        WHERE id = #{id}
+    </update>
+
+</mapper>
